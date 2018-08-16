@@ -10,7 +10,7 @@ class PDFInfo
 {
     protected $file;
     public $output;
-
+    
     public $title;
     public $author;
     public $creator;
@@ -31,13 +31,13 @@ class PDFInfo
     public function __construct($file)
     {
         $this->file = $file;
-
+        
         $this->loadOutput();
-
-        $this->parseOutput();
+        
+        $this->parseOutput();        
     }
-
-    public function getBinary()
+    
+    public function getBinary() 
     {
         if (empty(static::$bin)) {
             static::$bin = trim(trim(getenv('PDFINFO_BIN'), '\\/" \'')) ?: 'pdfinfo';
@@ -53,18 +53,18 @@ class PDFInfo
         $file = escapeshellarg($this->file);
         // Parse entire output
         // Surround with double quotes if file name has spaces
-        exec("$cmd $file", $output, $returnVar);
-
+        exec("$cmd -l 500 $file", $output, $returnVar);
+        
         if ( $returnVar === 1 ){
             throw new Exceptions\OpenPDFException();
         } else if ( $returnVar === 2 ){
             throw new Exceptions\OpenOutputException();
         } else if ( $returnVar === 3 ){
-            throw new Exceptions\PDFPermissionException();
+            throw new Exceptions\PDFPermissionException();            
         } else if ( $returnVar === 99 ){
-            throw new Exceptions\OtherException();
+            throw new Exceptions\OtherException();                        
         }
-
+        
         $this->output = $output;
     }
 
@@ -80,13 +80,38 @@ class PDFInfo
         $this->form = $this->parse('Form');
         $this->pages = $this->parse('Pages');
         $this->encrypted = $this->parse('Encrypted');
-        $this->pageSize = $this->parse('Page size');
+        $this->pageSize = $this->parse('Page    1 size');
+		
+		$x=1;
+		foreach(range(1,$this->pages) as $index) {
+		if ($x>99){
+        $this->newpageSize->$x = $this->parse('Page  '.$x.' size');
+		} else if ($x>9){
+        $this->newpageSize->$x = $this->parse('Page   '.$x.' size');
+		} else {
+        $this->newpageSize->$x = $this->parse('Page    '.$x.' size');
+		}
+		$x++;
+		}
+		
+		$x=1;
+		foreach(range(1,$this->pages) as $index) {
+		if ($x>99){
+        $this->newrotation->$x = $this->parse('Page  '.$x.' rot');
+		} else if ($x>9){
+        $this->newrotation->$x = $this->parse('Page   '.$x.' rot');
+		} else {
+        $this->newrotation->$x = $this->parse('Page    '.$x.' rot');
+		}
+		$x++;
+		}
+		
+        $this->rotation = $this->parse('Page    1 rot');
         $this->fileSize = $this->parse('File size');
         $this->optimized = $this->parse('Optimized');
         $this->PDFVersion = $this->parse('PDF version');
-        $this->pageRot = $this->parse('Page rot');
     }
-
+        
     private function parse($attribute)
     {
         // Iterate through lines
@@ -101,7 +126,7 @@ class PDFInfo
             }
         }
 
-        return $result;
+        return $result;    
     }
-
+    
 }
