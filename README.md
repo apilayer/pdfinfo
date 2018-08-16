@@ -1,3 +1,5 @@
+- Adapted version for EV Conversion Worker
+
 Simple PHP wrapper to the pdfinfo unix tool.
 
 Inspired by http://stackoverflow.com/questions/14644353/get-the-number-of-pages-in-a-pdf-document/14644354
