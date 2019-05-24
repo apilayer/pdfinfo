@@ -1,6 +1,6 @@
 <?php
 
-namespace Howtomakeaturn\PDFInfo;
+namespace apilayer\PDFInfo;
 
 /*
 * Inspired by http://stackoverflow.com/questions/14644353/get-the-number-of-pages-in-a-pdf-document/14644354

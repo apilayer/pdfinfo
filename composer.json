@@ -1,15 +1,12 @@
 {
-    "name": "howtomakeaturn/pdfinfo",
+    "name": "apilayer/pdfinfo",
     "type": "library",
-    "description": "simple php wrapper for pdfinfo",
+    "description": "pdfinfo PHP wrapper",
     "keywords": ["pdf", "pdfinfo"],
     "license": "MIT",
-    "require-dev": {
-      "filp/whoops": "1.1.4"
-    },
     "autoload": {
-        "psr-0": {
-            "Howtomakeaturn\\PDFInfo": "src/"
+        "psr-4": {
+            "apilayer\\PDFInfo\\": "src/"
         }
     }
 }
