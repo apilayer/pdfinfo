@@ -91,6 +91,26 @@ class PDFInfo
                 $this->attributes->{"${key}s"}->{$key_matches['number']} = $value;
             }
         }
+
+        // Compatibility with version 4.0 which has page rotation data inside of page size
+        $rot_pattern = '/\(rot\w+\s(?<degrees>\d+)\s\w+\)$$/';
+        $rot_replace = '/\s+\([^\)]+\)$/';
+
+        if (is_null($this->pageRot) && $this->pageSize && preg_match($rot_pattern, $this->pageSize, $rot_matches)) {
+            $this->attributes->{'pageRot'} = $rot_matches['degrees'];
+            $this->attributes->{'pageSize'} = preg_replace($rot_replace, '', $this->pageSize);
+
+            // Also process attributes for all pages
+            if (property_exists($this->attributes, 'pageSizes')) {
+                foreach ($this->pageSizes as $page_number => $page_size) {
+                    preg_match($rot_pattern, $page_size, $page_matches);
+                    if ($page_matches) {
+                        $this->attributes->{'pageRots'}->{$page_number} = $page_matches['degrees'];
+                        $this->attributes->{'pageSizes'}->{$page_number} = preg_replace($rot_replace, '', $this->pageSizes->{$page_number});
+                    }
+                }
+            }
+        }
     }
 
     private function formatKey($string)
