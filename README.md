@@ -1,5 +1,3 @@
-- Adapted version for EV Conversion Worker
-
 Simple PHP wrapper to the pdfinfo unix tool.
 
 Inspired by http://stackoverflow.com/questions/14644353/get-the-number-of-pages-in-a-pdf-document/14644354
@@ -45,7 +43,7 @@ This library throws 4 kind of exceptions to represent the official exit codes.
 * PDFPermissionException
 * OtherException
 
-Check the [official documentation](http://linuxcommand.org/man_pages/pdfinfo1.html) for more information.
+Check the [official documentation](https://www.xpdfreader.com/pdfinfo-man.html) for more information.
 
 
 
@@ -64,7 +62,14 @@ Currently this library supports the following metadata:
 * pages
 * encrypted
 * pageSize
+* pageSizes
 * fileSize
 * optimized
 * PDFVersion
 * pageRot
+* pageRots
+
+Environment variables configuration:
+
+* `PDFINFO_BIN` - location of PDFInfo executable
+* `PDFINFO_PAGE_LIMIT` - last page to process, defaults to 999
