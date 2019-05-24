@@ -1,4 +1,5 @@
 <?php
+
 namespace Howtomakeaturn\PDFInfo;
 
 /*
@@ -9,35 +10,26 @@ namespace Howtomakeaturn\PDFInfo;
 class PDFInfo
 {
     protected $file;
-    public $output;
-    
-    public $title;
-    public $author;
-    public $creator;
-    public $producer;
-    public $creationDate;
-    public $modDate;
-    public $tagged;
-    public $form;
-    public $pages;
-    public $encrypted;
-    public $pageSize;
-    public $fileSize;
-    public $optimized;
-    public $PDFVersion;
-
+    public $attributes, $output;
     public static $bin;
 
     public function __construct($file)
     {
         $this->file = $file;
-        
+
         $this->loadOutput();
-        
-        $this->parseOutput();        
+
+        $this->parseOutput();
     }
-    
-    public function getBinary() 
+
+    public function __get($field)
+    {
+        return property_exists($this->attributes, $field) ?
+            $this->attributes->{$field} :
+            null;
+    }
+
+    public function getBinary()
     {
         if (empty(static::$bin)) {
             static::$bin = trim(trim(getenv('PDFINFO_BIN'), '\\/" \'')) ?: 'pdfinfo';
@@ -51,82 +43,65 @@ class PDFInfo
         $cmd = escapeshellarg($this->getBinary()); // escapeshellarg to work with Windows paths with spaces.
 
         $file = escapeshellarg($this->file);
+
+        $page_limit = intval(getenv('PDFINFO_PAGE_LIMIT')) ?: 999;
+
         // Parse entire output
         // Surround with double quotes if file name has spaces
-        exec("$cmd -l 500 $file", $output, $returnVar);
-        
-        if ( $returnVar === 1 ){
+        exec("$cmd -l $page_limit $file", $output, $returnVar);
+
+        if ($returnVar === 1) {
             throw new Exceptions\OpenPDFException();
-        } else if ( $returnVar === 2 ){
-            throw new Exceptions\OpenOutputException();
-        } else if ( $returnVar === 3 ){
-            throw new Exceptions\PDFPermissionException();            
-        } else if ( $returnVar === 99 ){
-            throw new Exceptions\OtherException();                        
+        } else {
+            if ($returnVar === 2) {
+                throw new Exceptions\OpenOutputException();
+            } else {
+                if ($returnVar === 3) {
+                    throw new Exceptions\PDFPermissionException();
+                } else {
+                    if ($returnVar === 99) {
+                        throw new Exceptions\OtherException();
+                    }
+                }
+            }
         }
-        
+
         $this->output = $output;
     }
 
     private function parseOutput()
     {
-        $this->title = $this->parse('Title');
-        $this->author = $this->parse('Author');
-        $this->creator = $this->parse('Creator');
-        $this->producer = $this->parse('Producer');
-        $this->creationDate = $this->parse('CreationDate');
-        $this->modDate = $this->parse('ModDate');
-        $this->tagged = $this->parse('Tagged');
-        $this->form = $this->parse('Form');
-        $this->pages = $this->parse('Pages');
-        $this->encrypted = $this->parse('Encrypted');
-        $this->pageSize = $this->parse('Page    1 size');
-		
-		$x=1;
-		foreach(range(1,$this->pages) as $index) {
-		if ($x>99){
-        $this->newpageSize->$x = $this->parse('Page  '.$x.' size');
-		} else if ($x>9){
-        $this->newpageSize->$x = $this->parse('Page   '.$x.' size');
-		} else {
-        $this->newpageSize->$x = $this->parse('Page    '.$x.' size');
-		}
-		$x++;
-		}
-		
-		$x=1;
-		foreach(range(1,$this->pages) as $index) {
-		if ($x>99){
-        $this->newrotation->$x = $this->parse('Page  '.$x.' rot');
-		} else if ($x>9){
-        $this->newrotation->$x = $this->parse('Page   '.$x.' rot');
-		} else {
-        $this->newrotation->$x = $this->parse('Page    '.$x.' rot');
-		}
-		$x++;
-		}
-		
-        $this->rotation = $this->parse('Page    1 rot');
-        $this->fileSize = $this->parse('File size');
-        $this->optimized = $this->parse('Optimized');
-        $this->PDFVersion = $this->parse('PDF version');
-    }
-        
-    private function parse($attribute)
-    {
-        // Iterate through lines
-        $result = null;
-        foreach($this->output as $op)
-        {
-            // Extract the number
-            if(preg_match("/" . $attribute . ":\s*(.+)/i", $op, $matches) === 1)
-            {
-                $result = $matches[1];
-                break;
+        foreach ($this->output as $output_line) {
+            list($key, $value) = explode(':', $output_line, 2);
+
+            if (preg_match('/\b(?<number>\d+)\b/', $key, $key_matches)) {
+                $key = str_replace($key_matches['number'], '', $key);
+            }
+
+            $key = $this->formatKey($key);
+            $value = $this->formatValue($value);
+
+            // Only set attributes once
+            if (!property_exists($this->attributes, $key)) {
+                $this->attributes->{$key} = $value;
+            }
+
+            // Attributes for multiple pages
+            if (isset($key_matches['number'])) {
+                $this->attributes->{"${key}s"}->{$key_matches['number']} = $value;
             }
         }
-
-        return $result;    
     }
-    
+
+    private function formatKey($string)
+    {
+        return preg_replace_callback('/^([A-Z])(?![A-Z])/', function ($m) {
+            return strtolower($m[1]);
+        }, preg_replace('/\s+/', '', ucwords($string)));
+    }
+
+    private function formatValue($string)
+    {
+        return trim(preg_replace('/\s+/', ' ', $string));
+    }
 }
