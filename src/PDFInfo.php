@@ -7,14 +7,25 @@ namespace apilayer\PDFInfo;
 * @author howtomakeaturn
 */
 
+use stdClass;
+
 class PDFInfo
 {
     protected $file;
     public $attributes, $output;
     public static $bin;
 
+    /**
+     * PDFInfo constructor.
+     * @param $file
+     * @throws Exceptions\OpenOutputException
+     * @throws Exceptions\OpenPDFException
+     * @throws Exceptions\OtherException
+     * @throws Exceptions\PDFPermissionException
+     */
     public function __construct($file)
     {
+        $this->attributes = new stdClass;
         $this->file = $file;
 
         $this->loadOutput();
@@ -38,6 +49,12 @@ class PDFInfo
         return static::$bin;
     }
 
+    /**
+     * @throws Exceptions\OpenOutputException
+     * @throws Exceptions\OpenPDFException
+     * @throws Exceptions\OtherException
+     * @throws Exceptions\PDFPermissionException
+     */
     private function loadOutput()
     {
         $cmd = escapeshellarg($this->getBinary()); // escapeshellarg to work with Windows paths with spaces.
@@ -52,18 +69,12 @@ class PDFInfo
 
         if ($returnVar === 1) {
             throw new Exceptions\OpenPDFException();
-        } else {
-            if ($returnVar === 2) {
-                throw new Exceptions\OpenOutputException();
-            } else {
-                if ($returnVar === 3) {
-                    throw new Exceptions\PDFPermissionException();
-                } else {
-                    if ($returnVar === 99) {
-                        throw new Exceptions\OtherException();
-                    }
-                }
-            }
+        } elseif ($returnVar === 2) {
+            throw new Exceptions\OpenOutputException();
+        } elseif ($returnVar === 3) {
+            throw new Exceptions\PDFPermissionException();
+        } elseif ($returnVar === 99) {
+            throw new Exceptions\OtherException();
         }
 
         $this->output = $output;
@@ -88,6 +99,9 @@ class PDFInfo
 
             // Attributes for multiple pages
             if (isset($key_matches['number'])) {
+                if (!property_exists($this->attributes, "${key}s")) {
+                    $this->attributes->{"${key}s"} = new stdClass;
+                }
                 $this->attributes->{"${key}s"}->{$key_matches['number']} = $value;
             }
         }
@@ -104,9 +118,13 @@ class PDFInfo
             if (property_exists($this->attributes, 'pageSizes')) {
                 foreach ($this->pageSizes as $page_number => $page_size) {
                     preg_match($rot_pattern, $page_size, $page_matches);
-                    if ($page_matches) {
+                    if (isset($page_matches['degrees'])) {
+                        if (!property_exists($this->attributes, 'pageRots')) {
+                            $this->attributes->{'pageRots'} = new stdClass;
+                        }
                         $this->attributes->{'pageRots'}->{$page_number} = $page_matches['degrees'];
-                        $this->attributes->{'pageSizes'}->{$page_number} = preg_replace($rot_replace, '', $this->pageSizes->{$page_number});
+                        $this->attributes->{'pageSizes'}->{$page_number} = preg_replace($rot_replace, '',
+                            $this->pageSizes->{$page_number});
                     }
                 }
             }

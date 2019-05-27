@@ -8,7 +8,7 @@ pdfinfo is an unix tool helping extract information from pdf files.
 
 http://linuxcommand.org/man_pages/pdfinfo1.html
 
-You can get page count, title, author..etc via the tool.
+You can get metadata, page count and rotation for every page, etc.
 
 # Installation
 
@@ -24,7 +24,7 @@ sudo apt-get install poppler-utils
 ## 2. Install the library
 You can just download the file to your project, or install it via composer:
 ```
-composer require "howtomakeaturn/pdfinfo:1.*"
+composer require apilayer/pdfinfo
 ```
 
 # Usage
