@@ -1,5 +1,5 @@
 <?php
-namespace Howtomakeaturn\PDFInfo\Exceptions;
+namespace apilayer\PDFInfo\Exceptions;
 
 use \Exception;
 
